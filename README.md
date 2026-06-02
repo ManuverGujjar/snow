@@ -202,6 +202,47 @@ accepts genuine Slack events. (Calendar is poll-based and needs no inbound URL.)
 
 ---
 
+## Alternative public ingress: Cloudflare Tunnel
+
+If you'd rather use Cloudflare than Tailscale Funnel for the public Slack
+webhook (e.g. you already run `cloudflared`), the stack ships an **opt-in**
+`cloudflared` service. It's outbound-only — it dials Cloudflare and never opens a
+port on the box — and it's disabled by default so the normal local setup is
+unaffected.
+
+1. In the **Cloudflare Zero Trust dashboard** → *Networks → Tunnels*, create a
+   tunnel and copy its **token**. Put it in `.env`:
+   ```
+   CLOUDFLARE_TUNNEL_TOKEN=eyJ...
+   ```
+2. In the tunnel's **Public Hostnames**, add a route to n8n. The service URL uses
+   the internal Docker name — Cloudflared is on the same `snow` network:
+   - Hostname: `snow.yourdomain.com`  →  Service: `http://n8n:5678`
+   - (optional) `ntfy.yourdomain.com`  →  Service: `http://ntfy:80`
+3. Point n8n at the public hostname in `.env` and bring the tunnel up:
+   ```
+   N8N_HOST=snow.yourdomain.com
+   N8N_PROTOCOL=https
+   WEBHOOK_URL=https://snow.yourdomain.com/
+   ```
+   ```bash
+   docker compose --profile tunnel up -d
+   ```
+4. Use the webhook URL n8n shows on the `Slack Trigger` node as the Slack Event
+   Subscriptions Request URL.
+
+The `cloudflared` container only starts when you pass `--profile tunnel`; a plain
+`docker compose up -d` (and `bootstrap.sh`) leaves it off. To stop just the
+tunnel: `docker compose --profile tunnel stop cloudflared`. If you expose ntfy
+this way too, set `NTFY_BASE_URL` to its public hostname.
+
+> Tailscale vs Cloudflare: Tailscale `serve` keeps ntfy **private** to your
+> devices (best for personal push); Cloudflare Tunnel makes a hostname
+> **public** (needed for Slack's inbound webhook). Pick per service — they
+> coexist fine.
+
+---
+
 ## Backups
 
 All durable state is in named volumes: `postgres_data` (n8n's data — workflows,

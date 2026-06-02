@@ -109,3 +109,17 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  # Optional public ingress via Cloudflare Tunnel (outbound-only, no open ports).
+  # Disabled by default — only starts with:  docker compose --profile tunnel up -d
+  # Use it to expose n8n's webhook publicly for Slack (and optionally ntfy).
+  # Ingress hostnames -> services are configured in the Cloudflare Zero Trust
+  # dashboard, pointing at http://n8n:5678 and/or http://ntfy:80 on this network.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    networks: [snow]
+    profiles: ["tunnel"]
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
