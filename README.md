@@ -21,6 +21,7 @@ final push notification (over your private Tailscale network).
 | `ollama`   | `ollama/ollama`         | CPU-only local LLM, reached over the network    | **none**             |
 | `n8n`      | `n8nio/n8n`             | automation + AI orchestration                   | `127.0.0.1:5678`     |
 | `ntfy`     | `binwiederhier/ntfy`    | push notifications to your phone                | `127.0.0.1:8080`     |
+| `open-webui` | `ghcr.io/open-webui/open-webui` | chat UI for the local model             | `127.0.0.1:3000`     |
 
 **Secure by default:** `postgres` and `ollama` have no published ports at all —
 they're reachable only by other containers on the internal `snow` network. `n8n`
@@ -295,17 +296,14 @@ Quick one-off from the terminal:
 docker compose exec ollama ollama run gemma2:9b
 ```
 
-For a ChatGPT-style web UI, start the opt-in **Open WebUI** service (bound to
-localhost, talks to Ollama over the internal network):
+A ChatGPT-style web UI (**Open WebUI**) runs as part of the default stack — it's
+already up after `bootstrap.sh`. Open http://127.0.0.1:3000 (via SSH tunnel or
+Tailscale, same as n8n), pick `gemma2:9b` from the model dropdown, and chat.
 
-```bash
-docker compose --profile ui up -d
-```
-
-Then open http://127.0.0.1:3000 (via SSH tunnel or Tailscale, same as n8n). The
-first account you create is the admin — afterwards set `ENABLE_SIGNUP: "false"`
-in `docker-compose.yml` and `docker compose --profile ui up -d` to lock signups.
-Combine profiles as needed, e.g. `docker compose --profile tunnel --profile ui up -d`.
+The first account you create is the admin — afterwards set
+`ENABLE_SIGNUP: "false"` in `docker-compose.yml` and `docker compose up -d` to
+lock signups. (It talks to Ollama over the internal network via
+`OLLAMA_BASE_URL=http://ollama:11434`; nothing is exposed beyond localhost.)
 
 ### How bootstrap treats your `.env`
 

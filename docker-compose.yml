@@ -125,14 +125,13 @@ services:
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
 
-  # Optional ChatGPT-style web UI for talking to the local model directly.
-  # Disabled by default — only starts with:  docker compose --profile ui up -d
+  # ChatGPT-style web UI for talking to the local model directly.
+  # Part of the default stack (starts with `docker compose up -d` / bootstrap.sh).
   # Bound to localhost; reach it via SSH tunnel or Tailscale, like n8n.
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     restart: unless-stopped
     networks: [snow]
-    profiles: ["ui"]
     depends_on: [ollama]
     ports:
       - "127.0.0.1:3000:8080"
