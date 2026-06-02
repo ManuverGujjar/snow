@@ -1,0 +1,111 @@
+# snow — self-hosted personal triage stack
+# Security model:
+#   - postgres & ollama have NO host ports (reachable only on the internal network)
+#   - n8n & ntfy bind to 127.0.0.1 only (reach them via SSH tunnel or Tailscale)
+#   - all state lives in named volumes; restart: unless-stopped everywhere
+#
+# Service-to-service URLs (used inside n8n workflows):
+#   Ollama: http://ollama:11434
+#   ntfy:   http://ntfy:80
+
+name: snow
+
+networks:
+  snow:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  ollama_data:
+  n8n_data:
+  ntfy_data:
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    networks: [snow]
+    # No host ports: only n8n (same network) talks to it.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    networks: [snow]
+    # No host ports: CPU-only local LLM, reached by n8n over the internal network.
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE}
+    volumes:
+      - ollama_data:/root/.ollama
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    networks: [snow]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Bind to localhost only. Expose externally via Tailscale (see README).
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      # --- database (postgres) ---
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      # --- crypto / identity ---
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      # --- host / webhook config ---
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      N8N_EDITOR_BASE_URL: ${WEBHOOK_URL}
+      # --- timezone ---
+      GENERIC_TIMEZONE: ${TZ}
+      TZ: ${TZ}
+      # --- values referenced by the shared workflow pattern via $env ---
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+      NTFY_TOPIC: ${NTFY_TOPIC}
+      # --- hygiene ---
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    restart: unless-stopped
+    networks: [snow]
+    command: ["serve"]
+    # Bind to localhost only. Your phone reaches it via Tailscale (see README).
+    ports:
+      - "127.0.0.1:8080:80"
+    environment:
+      TZ: ${TZ}
+      NTFY_BASE_URL: ${NTFY_BASE_URL}
+      NTFY_LISTEN_HTTP: ":80"
+      NTFY_BEHIND_PROXY: "true"
+      NTFY_CACHE_FILE: /var/lib/ntfy/cache.db
+      NTFY_CACHE_DURATION: "12h"
+    volumes:
+      - ntfy_data:/var/lib/ntfy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/v1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
