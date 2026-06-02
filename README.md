@@ -43,8 +43,8 @@ git clone <this-repo> snow && cd snow
 2. create `.env` from `.env.example` with strong random secrets **once**
    (so `N8N_ENCRYPTION_KEY` stays stable — re-runs never regenerate it),
 3. `docker compose up -d`,
-4. pull the Ollama model named in `.env` (`OLLAMA_MODEL`, default `gemma3:4b` —
-   Google's open Gemma 3, sized for a 12GB CPU-only box).
+4. pull the Ollama model named in `.env` (`OLLAMA_MODEL`, default `gemma2:9b` —
+   Google's open Gemma 2 9B, sized for a 12GB CPU-only box).
 
 When it finishes:
 
