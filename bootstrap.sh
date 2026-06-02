@@ -23,8 +23,8 @@ sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"
 
 # Runtime keys that are safe to change anytime and should track .env.example.
 # Everything else in .env is preserved: generated secrets AND your own
-# deployment overrides (URLs, tokens, DB name, timezone).
-MANAGED_KEYS="OLLAMA_MODEL OLLAMA_KEEP_ALIVE"
+# deployment overrides (URLs, DB name, timezone).
+MANAGED_KEYS="OLLAMA_MODEL OLLAMA_KEEP_ALIVE CLOUDFLARE_TUNNEL_TOKEN"
 
 # Keep an existing .env in step with the template without clobbering anything
 # you care about: append keys the template gained, re-sync only MANAGED_KEYS.

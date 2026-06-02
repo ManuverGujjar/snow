@@ -294,9 +294,10 @@ Re-running `bootstrap.sh` is safe and reconciles config without losing anything:
 - **Generated secrets** (`POSTGRES_PASSWORD`, `N8N_ENCRYPTION_KEY`, `NTFY_TOPIC`)
   — created once, never touched again.
 - **Your deployment overrides** (`WEBHOOK_URL`, `N8N_HOST`, `NTFY_BASE_URL`,
-  `CLOUDFLARE_TUNNEL_TOKEN`, `POSTGRES_*`, `TZ`) — preserved as-is.
-- **Managed runtime keys** (`OLLAMA_MODEL`, `OLLAMA_KEEP_ALIVE`) — re-synced from
-  `.env.example` so a model change is just edit-the-template-and-rerun.
+  `POSTGRES_*`, `TZ`) — preserved as-is.
+- **Managed runtime keys** (`OLLAMA_MODEL`, `OLLAMA_KEEP_ALIVE`,
+  `CLOUDFLARE_TUNNEL_TOKEN`) — re-synced from `.env.example`, so changing the
+  model or rotating the tunnel token is just edit-the-template-and-rerun.
 - **New keys** added to `.env.example` over time — appended to your `.env`.
 
 ---
