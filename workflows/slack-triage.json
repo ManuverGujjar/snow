@@ -27,7 +27,7 @@
         "url": "http://ollama:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $env.OLLAMA_MODEL, stream: false, format: 'json', prompt: 'You are my personal triage assistant. A new Slack message (a DM or an @mention) just arrived. Decide whether it needs my personal attention. Respond ONLY with a JSON object with exactly these keys: needs_response (boolean), action (a short imperative string describing what I should do), deadline (an ISO-8601 datetime string, or empty string if none), urgency (one of: low, medium, high, critical), one_line_summary (a single concise sentence). Slack message JSON: ' + JSON.stringify($json) }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $env.OLLAMA_MODEL, stream: false, format: 'json', prompt: 'You are my personal triage assistant. A new Slack message (a DM or an @mention) just arrived. Decide whether it needs my personal attention. Respond ONLY with a JSON object with exactly these keys: needs_response (boolean), action (a short imperative string describing what I should do), deadline (an ISO-8601 datetime string, or empty string if none), urgency (one of: low, medium, high, critical), one_line_summary (a single concise sentence). Slack message JSON: ' + JSON.stringify($json).slice(0, 3000), options: { num_predict: 192, num_ctx: 2048 } }) }}",
         "options": {}
       },
       "id": "22222222-2222-4222-8222-222222222222",

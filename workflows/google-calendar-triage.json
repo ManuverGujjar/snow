@@ -44,7 +44,7 @@
         "url": "http://ollama:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $env.OLLAMA_MODEL, stream: false, format: 'json', prompt: 'You are my personal triage assistant. A calendar event is starting within the next hour. Decide whether it needs my personal attention (e.g. I should prepare, join, or act). Respond ONLY with a JSON object with exactly these keys: needs_response (boolean), action (a short imperative string describing what I should do), deadline (an ISO-8601 datetime string for when the event starts, or empty string), urgency (one of: low, medium, high, critical), one_line_summary (a single concise sentence). Calendar event JSON: ' + JSON.stringify($json) }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $env.OLLAMA_MODEL, stream: false, format: 'json', prompt: 'You are my personal triage assistant. A calendar event is starting within the next hour. Decide whether it needs my personal attention (e.g. I should prepare, join, or act). Respond ONLY with a JSON object with exactly these keys: needs_response (boolean), action (a short imperative string describing what I should do), deadline (an ISO-8601 datetime string for when the event starts, or empty string), urgency (one of: low, medium, high, critical), one_line_summary (a single concise sentence). Calendar event JSON: ' + JSON.stringify($json).slice(0, 3000), options: { num_predict: 192, num_ctx: 2048 } }) }}",
         "options": {}
       },
       "id": "a3333333-3333-4333-8333-333333333333",
