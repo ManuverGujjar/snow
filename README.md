@@ -287,6 +287,26 @@ for non-secret config) and re-run `./bootstrap.sh` — it re-syncs the model int
 your existing `.env`, pulls it, and restarts. Or edit `.env` directly, then
 `docker compose exec ollama ollama pull <model>` && `docker compose up -d`.
 
+### Chat with the model directly
+
+Quick one-off from the terminal:
+
+```bash
+docker compose exec ollama ollama run gemma2:9b
+```
+
+For a ChatGPT-style web UI, start the opt-in **Open WebUI** service (bound to
+localhost, talks to Ollama over the internal network):
+
+```bash
+docker compose --profile ui up -d
+```
+
+Then open http://127.0.0.1:3000 (via SSH tunnel or Tailscale, same as n8n). The
+first account you create is the admin — afterwards set `ENABLE_SIGNUP: "false"`
+in `docker-compose.yml` and `docker compose --profile ui up -d` to lock signups.
+Combine profiles as needed, e.g. `docker compose --profile tunnel --profile ui up -d`.
+
 ### How bootstrap treats your `.env`
 
 Re-running `bootstrap.sh` is safe and reconciles config without losing anything:
