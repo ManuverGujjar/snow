@@ -44,8 +44,8 @@ git clone <this-repo> snow && cd snow
 2. create `.env` from `.env.example` with strong random secrets **once**
    (so `N8N_ENCRYPTION_KEY` stays stable — re-runs never regenerate it),
 3. `docker compose up -d`,
-4. pull the Ollama model named in `.env` (`OLLAMA_MODEL`, default `gemma2:9b` —
-   Google's open Gemma 2 9B, sized for a 12GB CPU-only box).
+4. pull the Ollama model named in `.env` (`OLLAMA_MODEL`, default `gemma3:4b` —
+   Google's open Gemma 3 4B, fast on a CPU-only box).
 
 When it finishes:
 
@@ -293,12 +293,12 @@ your existing `.env`, pulls it, and restarts. Or edit `.env` directly, then
 Quick one-off from the terminal:
 
 ```bash
-docker compose exec ollama ollama run gemma2:9b
+docker compose exec ollama ollama run gemma3:4b
 ```
 
 A ChatGPT-style web UI (**Open WebUI**) runs as part of the default stack — it's
 already up after `bootstrap.sh`. Open http://127.0.0.1:3000 (via SSH tunnel or
-Tailscale, same as n8n), pick `gemma2:9b` from the model dropdown, and chat.
+Tailscale, same as n8n), pick `gemma3:4b` from the model dropdown, and chat.
 
 The first account you create is the admin — afterwards set
 `ENABLE_SIGNUP: "false"` in `docker-compose.yml` and `docker compose up -d` to
