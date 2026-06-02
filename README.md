@@ -282,8 +282,22 @@ docker compose down               # stop (volumes/state preserved)
 docker compose exec ollama ollama list        # models on disk
 ```
 
-Changing the model: edit `OLLAMA_MODEL` in `.env`, then
-`docker compose exec ollama ollama pull <model>` and `docker compose up -d`.
+Changing the model: edit `OLLAMA_MODEL` in `.env.example` (the source of truth
+for non-secret config) and re-run `./bootstrap.sh` — it re-syncs the model into
+your existing `.env`, pulls it, and restarts. Or edit `.env` directly, then
+`docker compose exec ollama ollama pull <model>` && `docker compose up -d`.
+
+### How bootstrap treats your `.env`
+
+Re-running `bootstrap.sh` is safe and reconciles config without losing anything:
+
+- **Generated secrets** (`POSTGRES_PASSWORD`, `N8N_ENCRYPTION_KEY`, `NTFY_TOPIC`)
+  — created once, never touched again.
+- **Your deployment overrides** (`WEBHOOK_URL`, `N8N_HOST`, `NTFY_BASE_URL`,
+  `CLOUDFLARE_TUNNEL_TOKEN`, `POSTGRES_*`, `TZ`) — preserved as-is.
+- **Managed runtime keys** (`OLLAMA_MODEL`, `OLLAMA_KEEP_ALIVE`) — re-synced from
+  `.env.example` so a model change is just edit-the-template-and-rerun.
+- **New keys** added to `.env.example` over time — appended to your `.env`.
 
 ---
 

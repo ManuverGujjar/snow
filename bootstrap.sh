@@ -18,6 +18,39 @@ cd "$SCRIPT_DIR"
 log() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!!\033[0m %s\n' "$*" >&2; }
 
+# In-place sed that works on both GNU (Linux) and BSD/macOS.
+sedi() { if sed --version >/dev/null 2>&1; then sed -i "$@"; else sed -i '' "$@"; fi; }
+
+# Runtime keys that are safe to change anytime and should track .env.example.
+# Everything else in .env is preserved: generated secrets AND your own
+# deployment overrides (URLs, tokens, DB name, timezone).
+MANAGED_KEYS="OLLAMA_MODEL OLLAMA_KEEP_ALIVE"
+
+# Keep an existing .env in step with the template without clobbering anything
+# you care about: append keys the template gained, re-sync only MANAGED_KEYS.
+reconcile_env() {
+  # 1. Append keys present in .env.example but missing from .env.
+  while IFS= read -r line; do
+    case "$line" in ''|\#*) continue ;; esac
+    [ "${line#*=}" = "$line" ] && continue   # not a KEY=VALUE line
+    key="${line%%=*}"
+    if ! grep -q "^${key}=" .env; then
+      printf '%s\n' "$line" >> .env
+      log "added new config key from template: ${key}"
+    fi
+  done < .env.example
+
+  # 2. Re-sync managed runtime keys from the template.
+  for key in $MANAGED_KEYS; do
+    want="$(grep "^${key}=" .env.example | head -n1 || true)"
+    have="$(grep "^${key}=" .env | head -n1 || true)"
+    if [ -n "$want" ] && [ -n "$have" ] && [ "$have" != "$want" ]; then
+      sedi "s|^${key}=.*|${want}|" .env
+      log "synced ${key} from template: ${have#*=} -> ${want#*=}"
+    fi
+  done
+}
+
 # ---------------------------------------------------------------------------
 # 1. Docker
 # ---------------------------------------------------------------------------
@@ -56,8 +89,6 @@ if [ ! -f .env ]; then
   N8N_ENCRYPTION_KEY="$(gen 24)"   # stable for the life of this .env
   NTFY_TOPIC="snow-$(gen 10)"      # unguessable; this is your access control
 
-  # Portable in-place edit (GNU & BSD sed).
-  sedi() { sed --version >/dev/null 2>&1 && sed -i "$@" || sed -i '' "$@"; }
   sedi "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASSWORD}|" .env
   sedi "s|^N8N_ENCRYPTION_KEY=.*|N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}|" .env
   sedi "s|^NTFY_TOPIC=.*|NTFY_TOPIC=${NTFY_TOPIC}|" .env
@@ -67,6 +98,9 @@ if [ ! -f .env ]; then
 else
   log ".env already exists — leaving its secrets (and N8N_ENCRYPTION_KEY) untouched."
 fi
+
+# Bring an existing .env up to date with non-secret template changes.
+reconcile_env
 
 # Load values we need below.
 set -a; . ./.env; set +a
